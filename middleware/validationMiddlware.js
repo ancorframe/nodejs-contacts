@@ -5,6 +5,8 @@ const {
   patchSchema,
   userShema,
   subscriptionShema,
+  emailShema,
+  passwordShema,
 } = require("../helpers/validationІSchemas");
 
 const validation = (schema) => {
@@ -27,10 +29,16 @@ const userValidation = validation(userShema);
 
 const subscriptionValidation = validation(subscriptionShema);
 
+const emailValidation = validation(emailShema);
+
+const passwordValidation = validation(passwordShema);
+
 module.exports = {
   postValidation,
   putValidation,
   patchValidation,
   userValidation,
   subscriptionValidation,
+  emailValidation,
+  passwordValidation,
 };

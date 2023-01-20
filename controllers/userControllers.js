@@ -1,10 +1,19 @@
-const { BadRequest, Conflict, Unauthorized } = require("../helpers/errors");
+const {
+  BadRequest,
+  Conflict,
+  Unauthorized,
+  NotFound,
+} = require("../helpers/errors");
 const {
   registerUser,
   loginUser,
   logoutUser,
   updateSubscription,
   updateAvatar,
+  verificationUser,
+  verifyUser,
+  forgotPasswordUser,
+  restorePasswordUser,
 } = require("../services/usersService");
 
 const registerUserController = async (req, res) => {
@@ -18,12 +27,13 @@ const registerUserController = async (req, res) => {
 };
 
 const loginUserController = async (req, res) => {
-  const { email, password } = req.body;
-  const login = await loginUser(email, password);
-  if (!login) {
+  try {
+    const { email, password } = req.body;
+    const login = await loginUser(email, password);
+    res.json({ login });
+  } catch (error) {
     throw new Unauthorized("Email or password is wrong");
   }
-  res.json({ login });
 };
 
 const logoutUserController = async (req, res) => {
@@ -43,20 +53,64 @@ const updateSubscriptionController = async (req, res) => {
   if (!subscription) {
     throw new BadRequest("missing field subscription");
   }
-  const update = await updateSubscription(_id, subscription);
-  if (!update) {
+  try {
+    await updateSubscription(_id, subscription);
+    res.json({ message: `subscription updated to: ${subscription}` });
+  } catch (error) {
     throw new BadRequest(
       "subscription can be only ['starter', 'pro', 'business']"
     );
   }
-  res.json({ message: `subscription updated to: ${subscription}` });
 };
 
 const updateAvatarController = async (req, res) => {
-
   const filename = req.file.filename;
   const url = await updateAvatar(req, filename);
   res.json({ avatarURL: `${url}` });
+};
+
+const verificationUserController = async (req, res) => {
+  const { verificationToken } = req.params;
+  if (!verificationToken) {
+    throw new NotFound("Something wrong(. Try again");
+  }
+  try {
+    await verificationUser(verificationToken);
+    res.json({ message: "Verification successful" });
+  } catch (error) {
+    throw new NotFound("User not found");
+  }
+};
+
+const verifyUserController = async (req, res) => {
+  const { email } = req.body;
+  try {
+    await verifyUser(email);
+    res.json({ message: "Verification email sent" });
+  } catch (error) {
+    throw new BadRequest("Verification has already been passed");
+  }
+};
+
+const forgotPasswordUserController = async (req, res) => {
+  const { email } = req.body;
+  try {
+    await forgotPasswordUser(email);
+    res.json({ message: "Restore email sent" });
+  } catch (error) {
+    throw new BadRequest("Something wrong( Try again");
+  }
+};
+
+const restorePasswordUserController = async (req, res) => {
+  const { _id } = req.user;
+  const { password } = req.body;
+  try {
+    await restorePasswordUser(_id, password);
+  } catch (error) {
+    throw new BadRequest("Something wrong( Try again");
+  }
+  res.json({ message: "Password was change" });
 };
 
 module.exports = {
@@ -66,4 +120,8 @@ module.exports = {
   currentUserController,
   updateSubscriptionController,
   updateAvatarController,
+  verificationUserController,
+  verifyUserController,
+  forgotPasswordUserController,
+  restorePasswordUserController,
 };

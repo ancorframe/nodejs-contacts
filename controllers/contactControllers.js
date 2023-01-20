@@ -21,17 +21,17 @@ const getContactsController = async (req, res) => {
 const getContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
   const { postId } = req.params;
-  const contact = await getContactsById(postId, userId);
-  if (!contact) {
+  try {
+    const contact = await getContactsById(postId, userId);
+    res.json({ contact });
+  } catch (error) {
     throw new BadRequest(`Contact with id ${postId} not found`);
   }
-  res.json({ contact });
 };
 
 const addContactsController = async (req, res) => {
   const { _id: userId } = req.user;
   const body = req.body;
-
   const contact = await addContacts(body, userId);
   res.status(201).json({ contact });
 };
@@ -39,37 +39,40 @@ const addContactsController = async (req, res) => {
 const updateContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
   const { postId } = req.params;
-  const updateContact = await updateContactsById(postId, req.body, userId);
-  if (!updateContact) {
+  try {
+    const updateContact = await updateContactsById(postId, req.body, userId);
+    res.json({ message: `contact with id:${postId} updated`, updateContact });
+  } catch (error) {
     throw new NotFound(`Contact with id ${postId} not found`);
   }
-  res.json({ message: `contact with id:${postId} updated`, updateContact });
 };
 
 const deleteContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
   const { postId } = req.params;
-  const removeContact = await deleteContactsById(postId, userId);
-  if (!removeContact) {
+  try {
+    await deleteContactsById(postId, userId);
+    res.json({ message: `contact with id:${postId} deleted` });
+  } catch (error) {
     throw new NotFound(`Contact with id ${postId} not found`);
   }
-  res.json({ message: `contact with id:${postId} deleted` });
 };
 
 const updateFavoriteByIdController = async (req, res) => {
   const { _id: userId } = req.user;
   const { postId } = req.params;
   const { favorite } = req.body;
-  if (favorite) {
+  if (!favorite) {
     throw new BadRequest("missing field favorite");
   }
-  const updateFavorite = await updateFavoriteById(postId, favorite, userId);
-  if (!updateFavorite) {
+  try {
+    await updateFavoriteById(postId, favorite, userId);
+    res.json({
+      message: `contact with id:${postId} set favorite to ${favorite}`,
+    });
+  } catch (error) {
     throw new NotFound(`Contact with id ${postId} not found`);
   }
-  res.json({
-    message: `contact with id:${postId} set favorite to ${favorite}`,
-  });
 };
 
 module.exports = {

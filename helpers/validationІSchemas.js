@@ -28,10 +28,20 @@ const subscriptionShema = Joi.object({
   subscription: Joi.string().required(),
 });
 
+const emailShema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+const passwordShema = Joi.object({
+  password: Joi.string().min(6).max(20).required(),
+});
+
 module.exports = {
   postSchema,
   putSchema,
   patchSchema,
   userShema,
   subscriptionShema,
+  emailShema,
+  passwordShema,
 };
