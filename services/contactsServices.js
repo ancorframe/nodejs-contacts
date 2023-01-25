@@ -1,36 +1,40 @@
 const { Contacts } = require("../db/contactModel");
 
 const getContacts = async (userId, page, limit, filters) => {
-  const contacts = await Contacts.find({ owner: userId, ...filters })
+  const contacts = await Contacts.find({ owner: userId, ...filters },{__v:0})
     .skip(page)
     .limit(limit);
   return contacts;
 };
 
 const getContactsById = async (postId, userId) => {
-  const contact = await Contacts.findOne({ _id: postId, owner: userId });
+  const contact = await Contacts.findOne(
+    { _id: postId, owner: userId },
+    { __v: 0 }
+  );
   return contact;
 };
 
 const addContacts = async (body, userId) => {
-  const { name, email, phone, favorite } = body;
+  const { name, email, phone, favorite = false } = body;
   const contact = new Contacts({ name, email, phone, favorite, owner: userId });
-  await contact.save();
-  return contact;
+  const savedContact = await contact.save();
+  return savedContact;
 };
 
 const updateContactsById = async (postId, body, userId) => {
-  const { name, email, phone, favorite = false } = body;
-  const updateContact = await Contacts.findOneAndUpdate(
+ await Contacts.findOneAndUpdate(
     { _id: postId, owner: userId },
     {
-      $set: { name, email, phone, favorite },
+      $set: { ...body },
     }
   );
-  return updateContact;
+  const contact = await Contacts.findOne({ _id: postId, owner: userId },{__v:0});
+  return contact;
 };
 
 const deleteContactsById = async (postId, userId) => {
+
   const removeContact = await Contacts.findOneAndDelete({
     _id: postId,
     owner: userId,
@@ -39,13 +43,14 @@ const deleteContactsById = async (postId, userId) => {
 };
 
 const updateFavoriteById = async (postId, favorite, userId) => {
-  const updateFavorite = await Contacts.findOneAndUpdate(
+await Contacts.findOneAndUpdate(
     { _id: postId, owner: userId },
     {
       $set: { favorite },
     }
-  );
-  return updateFavorite;
+);
+  const contact = await Contacts.findOne({ _id: postId, owner: userId },{favorite:1});
+  return contact;
 };
 
 module.exports = {

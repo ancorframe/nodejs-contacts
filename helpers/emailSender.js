@@ -11,8 +11,9 @@ const sendEmail = async ({ to, link }) => {
         link,
       },
     };
-    await sgMail.send(msg);
+    const send = await sgMail.send(msg);
     console.log("Email sent");
+    return send
   } catch (error) {
     console.error(error);
   }

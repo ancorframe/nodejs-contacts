@@ -20,17 +20,17 @@ const registerUserController = async (req, res) => {
   const { email, password } = req.body;
   try {
     const register = await registerUser(email, password);
-    res.status(201).json({ register });
+    res.status(201).json({ email:register });
   } catch (error) {
     throw new Conflict();
   }
 };
 
 const loginUserController = async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
     const login = await loginUser(email, password);
-    res.json({ login });
+    res.json({ ...login });
   } catch (error) {
     throw new Unauthorized("Email or password is wrong");
   }
@@ -43,8 +43,8 @@ const logoutUserController = async (req, res) => {
 };
 
 const currentUserController = async (req, res) => {
-  const { email, subscription } = req.user;
-  res.json({ email, subscription });
+  const { email, subscription,token ,avatarURL } = req.user;
+  res.json({ user: {email, subscription,  avatarURL},token });
 };
 
 const updateSubscriptionController = async (req, res) => {

@@ -10,20 +10,21 @@ const {
 
 const getContactsController = async (req, res) => {
   const { _id: userId } = req.user;
-
   let { page = 1, limit = 10, ...filters } = req.query;
   page = parseInt(page) - 1;
   limit = parseInt(limit);
   const contacts = await getContacts(userId, page, limit, filters);
+
   res.json({ contacts });
 };
 
 const getContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
-  const { postId } = req.params;
+  const { id: postId } = req.params;
   try {
     const contact = await getContactsById(postId, userId);
-    res.json({ contact });
+    const { _id, name, phone, favorite, email } = contact;
+    res.json({ contact: { _id, name, phone, favorite, email } });
   } catch (error) {
     throw new BadRequest(`Contact with id ${postId} not found`);
   }
@@ -38,10 +39,15 @@ const addContactsController = async (req, res) => {
 
 const updateContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
-  const { postId } = req.params;
+  const { id: postId } = req.params;
+  const { body } = req;
   try {
-    const updateContact = await updateContactsById(postId, req.body, userId);
-    res.json({ message: `contact with id:${postId} updated`, updateContact });
+    const contact = await updateContactsById(postId, body, userId);
+    const { _id, name, phone, favorite, email } = contact;
+    res.json({
+      message: `contact with id:${postId} updated`,
+      updateContact: { _id, name, phone, favorite, email },
+    });
   } catch (error) {
     throw new NotFound(`Contact with id ${postId} not found`);
   }
@@ -49,7 +55,8 @@ const updateContactsByIdController = async (req, res) => {
 
 const deleteContactsByIdController = async (req, res) => {
   const { _id: userId } = req.user;
-  const { postId } = req.params;
+  const { id: postId } = req.params;
+
   try {
     await deleteContactsById(postId, userId);
     res.json({ message: `contact with id:${postId} deleted` });
@@ -60,15 +67,13 @@ const deleteContactsByIdController = async (req, res) => {
 
 const updateFavoriteByIdController = async (req, res) => {
   const { _id: userId } = req.user;
-  const { postId } = req.params;
+  const { id: postId } = req.params;
   const { favorite } = req.body;
-  if (!favorite) {
-    throw new BadRequest("missing field favorite");
-  }
   try {
-    await updateFavoriteById(postId, favorite, userId);
+    const update = await updateFavoriteById(postId, favorite, userId);
     res.json({
       message: `contact with id:${postId} set favorite to ${favorite}`,
+      update,
     });
   } catch (error) {
     throw new NotFound(`Contact with id ${postId} not found`);

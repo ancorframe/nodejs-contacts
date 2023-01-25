@@ -27,7 +27,7 @@ router.post(
   userValidation,
   asyncWrapper(registerUserController)
 );
-router.get("/users/login", userValidation, asyncWrapper(loginUserController));
+router.post("/users/login", userValidation, asyncWrapper(loginUserController));
 router.post(
   "/users/logout",
   authMiddleware,

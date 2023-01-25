@@ -3,6 +3,7 @@ const { Unauthorized } = require("../helpers/errors");
 const { User } = require("../db/userModel");
 
 const authMiddleware = async (req, res, next) => {
+  // console.log('auth req.params',req.params);
   if (!req.headers.authorization) {
     next(new Unauthorized());
   }

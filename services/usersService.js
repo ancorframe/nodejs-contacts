@@ -13,15 +13,15 @@ const registerUser = async (email, password) => {
   const secret = process.env.JWT_SECRET_KEY;
   const verificationToken = sha256.x2(email + secret);
   const user = new User({ email, password, verificationToken });
-  const save = await user.save();
+  await user.save();
   const send = await sendEmail({
     to: email,
     link: `${UI_URL}/api/auth/users/verify/${verificationToken}`,
   });
   if (!send) {
-    throw new Error()
+    throw new Error();
   }
-  return save;
+  return user.email;
 };
 
 const loginUser = async (email, password) => {
@@ -37,13 +37,14 @@ const loginUser = async (email, password) => {
     { _id: user._id, email: user.email },
     process.env.JWT_SECRET_KEY
   );
-  const updateUser = await User.findByIdAndUpdate(user.id, {
+  const updateUser = await User.findByIdAndUpdate(user._id, {
     $set: { token },
   });
   if (!updateUser) {
     throw new Error();
   }
-  return { user, token };
+  const { subscription, avatarURL } = user;
+  return { user: { email:user.email, subscription, avatarURL }, token };
 };
 
 const logoutUser = async (_id) => {
@@ -62,8 +63,6 @@ const updateSubscription = async (_id, subscription) => {
 const updateAvatar = async (req, filename) => {
   const { user } = req;
   const { _id: id } = user;
-  const host = req.headers.host;
-
   const imgName = `${id}.jpg`;
   const FILE_DESTINATION = path.resolve(`./public/avatars/${imgName}`);
   if (user.avatarURL.includes(id)) {
@@ -71,7 +70,7 @@ const updateAvatar = async (req, filename) => {
   }
   const FILE_READ = path.resolve(`./tmp/${filename}`);
   avatarFormater(FILE_READ, FILE_DESTINATION);
-  const avatarURL = `${host}/avatars/${imgName}`;
+  const avatarURL = `${UI_URL}/avatars/${imgName}`;
   await User.findByIdAndUpdate(id, {
     $set: { avatarURL },
   });
@@ -85,7 +84,7 @@ const verificationUser = async (verificationToken) => {
     throw new Error();
   }
   await User.findByIdAndUpdate(user._id, {
-    $set: { verificationToken: null },
+    $set: { verificationToken: null,verify:true },
   });
   return user;
 };
