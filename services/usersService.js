@@ -3,20 +3,22 @@ const bcrypt = require("bcrypt");
 const { User } = require("../db/userModel");
 const path = require("path");
 const { avatarFormater } = require("../helpers/avatarFormater");
-const { sendEmail } = require("../helpers/emailSender");
+const { verification, restorePassword } = require("../helpers/emailSender");
 const fs = require("fs").promises;
 const sha256 = require("sha256");
+const { v4: uuidv4 } = require("uuid");
 
 const UI_URL = process.env.UI_URL;
+const SERVER_URL = process.env.SERVER_URL;
 
 const registerUser = async (email, password) => {
   const secret = process.env.JWT_SECRET_KEY;
   const verificationToken = sha256.x2(email + secret);
   const user = new User({ email, password, verificationToken });
   await user.save();
-  const send = await sendEmail({
+  const send = await verification({
     to: email,
-    link: `${UI_URL}/api/auth/users/verify/${verificationToken}`,
+    link: `${UI_URL}/verify/${verificationToken}`,
   });
   if (!send) {
     throw new Error();
@@ -44,7 +46,7 @@ const loginUser = async (email, password) => {
     throw new Error();
   }
   const { subscription, avatarURL } = user;
-  return { user: { email:user.email, subscription, avatarURL }, token };
+  return { user: { email: user.email, subscription, avatarURL }, token };
 };
 
 const logoutUser = async (_id) => {
@@ -63,14 +65,18 @@ const updateSubscription = async (_id, subscription) => {
 const updateAvatar = async (req, filename) => {
   const { user } = req;
   const { _id: id } = user;
-  const imgName = `${id}.jpg`;
-  const FILE_DESTINATION = path.resolve(`./public/avatars/${imgName}`);
+  const prevAvatar = user.avatarURL;
   if (user.avatarURL.includes(id)) {
-    await fs.unlink(FILE_DESTINATION);
+    const splitUrl = prevAvatar.split("/");
+    const avatarName = splitUrl.filter((i) => i.includes(id));
+    const oldPath = path.resolve(`./public/avatars/${avatarName}`);
+    await fs.unlink(oldPath);
   }
+  const newAvatar = `${id}.${uuidv4()}.jpg`;
+  const FILE_DESTINATION = path.resolve(`./public/avatars/${newAvatar}`);
   const FILE_READ = path.resolve(`./tmp/${filename}`);
   avatarFormater(FILE_READ, FILE_DESTINATION);
-  const avatarURL = `${UI_URL}/avatars/${imgName}`;
+  const avatarURL = `${SERVER_URL}/avatars/${newAvatar}`;
   await User.findByIdAndUpdate(id, {
     $set: { avatarURL },
   });
@@ -84,9 +90,9 @@ const verificationUser = async (verificationToken) => {
     throw new Error();
   }
   await User.findByIdAndUpdate(user._id, {
-    $set: { verificationToken: null,verify:true },
+    $set: { verificationToken: "verify", verify: true },
   });
-  return user;
+  // return user;
 };
 
 const verifyUser = async (email) => {
@@ -94,9 +100,9 @@ const verifyUser = async (email) => {
   if (!user) {
     throw new Error();
   }
-  const send = await sendEmail({
+  const send = await verification({
     to: email,
-    link: `${UI_URL}/api/auth/users/verify/${user.verificationToken}`,
+    link: `${UI_URL}/verify/${user.verificationToken}`,
   });
   if (!send) {
     throw new Error();
@@ -119,7 +125,7 @@ const forgotPasswordUser = async (email) => {
   if (!updateUser) {
     throw new Error();
   }
-  const send = await sendEmail({
+  const send = await restorePassword({
     to: email,
     link: `${UI_URL}/restorePassword/${token}`,
   });
@@ -134,12 +140,14 @@ const restorePasswordUser = async (_id, password) => {
   if (!user) {
     throw new Error();
   }
-  const updatePasswordUser = await User.findByIdAndUpdate(user.id, {
-    $set: { password },
-  });
-  if (!updatePasswordUser) {
-    throw new Error();
-  }
+  // const updatePasswordUser = await User.findByIdAndUpdate(user.id, {
+  //   $set: { password },
+  // });
+  // if (!updatePasswordUser) {
+  //   throw new Error();
+  // }
+  user.password = password;
+  user.save();
   return user;
 };
 

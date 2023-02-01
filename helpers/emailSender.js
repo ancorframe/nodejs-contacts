@@ -1,7 +1,7 @@
 const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const sendEmail = async ({ to, link }) => {
+const verification = async ({ to, link }) => {
   try {
     const msg = {
       to,
@@ -18,7 +18,25 @@ const sendEmail = async ({ to, link }) => {
     console.error(error);
   }
 };
+const restorePassword = async ({ to, link }) => {
+  try {
+    const msg = {
+      to,
+      from: "wotzad@gmail.com",
+      template_id: "d-461aba6f7c304faba5790f789718a982",
+      dynamic_template_data: {
+        link,
+      },
+    };
+    const send = await sgMail.send(msg);
+    console.log("Email sent");
+    return send;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 module.exports = {
-  sendEmail,
+  verification,
+  restorePassword,
 };

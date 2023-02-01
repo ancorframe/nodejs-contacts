@@ -20,7 +20,7 @@ const registerUserController = async (req, res) => {
   const { email, password } = req.body;
   try {
     const register = await registerUser(email, password);
-    res.status(201).json({ email:register });
+    res.status(201).json({ email: register });
   } catch (error) {
     throw new Conflict();
   }
@@ -43,8 +43,8 @@ const logoutUserController = async (req, res) => {
 };
 
 const currentUserController = async (req, res) => {
-  const { email, subscription,token ,avatarURL } = req.user;
-  res.json({ user: {email, subscription,  avatarURL},token });
+  const { email, subscription, token, avatarURL } = req.user;
+  res.json({ user: { email, subscription, avatarURL }, token });
 };
 
 const updateSubscriptionController = async (req, res) => {
@@ -55,7 +55,10 @@ const updateSubscriptionController = async (req, res) => {
   }
   try {
     await updateSubscription(_id, subscription);
-    res.json({ message: `subscription updated to: ${subscription}` });
+    res.json({
+      message: `subscription updated to: ${subscription}`,
+      subscription,
+    });
   } catch (error) {
     throw new BadRequest(
       "subscription can be only ['starter', 'pro', 'business']"
@@ -65,8 +68,15 @@ const updateSubscriptionController = async (req, res) => {
 
 const updateAvatarController = async (req, res) => {
   const filename = req.file.filename;
-  const url = await updateAvatar(req, filename);
-  res.json({ avatarURL: `${url}` });
+  if (!filename) {
+    throw new BadRequest("missing required field ");
+  }
+  try {
+    const url = await updateAvatar(req, filename);
+    res.json({ avatarURL: `${url}` });
+  } catch (error) {
+    throw new BadRequest("Something wrong( Try again");
+  }
 };
 
 const verificationUserController = async (req, res) => {
