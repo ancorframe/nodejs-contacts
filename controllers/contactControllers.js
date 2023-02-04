@@ -15,7 +15,7 @@ const getContactsController = async (req, res) => {
   limit = parseInt(limit);
   const contacts = await getContacts(userId, page, limit, filters);
 
-  res.json({ contacts });
+  res.json({ ...contacts });
 };
 
 const getContactsByIdController = async (req, res) => {
